@@ -23,7 +23,8 @@ add_compile_options(-Wall
 # Project files
 
 add_executable(main
-    src/main.c
+src/main.c
+src/lib/7941w.c
 )
 
 pico_enable_stdio_usb(main 1)

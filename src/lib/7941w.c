@@ -1,6 +1,7 @@
 #include "7941w.h"
 
 #include <string.h>
+#include "pico/time.h"
 #include "hardware/gpio.h"
 #include "hardware/uart.h"
 
@@ -63,7 +64,6 @@ bool uart_read_blocking_timout(uart_inst_t *uart, uint8_t *dst, size_t len)
     return readable;
 }
 
-// data is optional, can be NULL if length is 0
 void rfid_7941w_send(uart_inst_t *uart, uint8_t address, uint8_t command, uint8_t length, uint8_t *data)
 {
     //Protocol Header | Address | Command | Data Length | Data        | XOR Check
@@ -87,7 +87,6 @@ void rfid_7941w_send(uart_inst_t *uart, uint8_t address, uint8_t command, uint8_
     uart_write_blocking(uart, buffer, (6+length));
 }
 
-// data must have enough space for 255 bytes, returns true on success
 bool rfid_7941w_recv(uart_inst_t *uart, uint8_t *address, uint8_t *command, uint8_t *length, uint8_t *data)
 {
     //Protocol Header | Address | Command | Data Length | Data        | XOR Check
@@ -136,4 +135,35 @@ bool rfid_7941w_recv(uart_inst_t *uart, uint8_t *address, uint8_t *command, uint
     }
 
     return false;
+}
+
+bool rfid_7941w_read_LF(uart_inst_t *uart, uint8_t *length, uint8_t *data)
+{
+    rfid_7941w_send(uart, 0x0, 0x15, 0, NULL);
+    sleep_ms(rfid_7941W_RESPONSE_TIME_MS);
+    uint8_t status = 0;
+    bool success;
+    success = rfid_7941w_recv(uart, NULL, &status, length, data);
+    return success && status == 0x81;
+}
+
+bool rfid_7941w_read_HF(uart_inst_t *uart, uint8_t *length, uint8_t *data)
+{
+    rfid_7941w_send(uart, 0x0, 0x10, 0, NULL);
+    sleep_ms(rfid_7941W_RESPONSE_TIME_MS);
+    uint8_t status = 0;
+    bool success;
+    success = rfid_7941w_recv(uart, NULL, &status, length, data);
+    return success && status == 0x81;
+}
+
+bool rfid_7941w_read(uart_inst_t *uart, uint8_t *length, uint8_t *data)
+{
+    bool success;
+    success = rfid_7941w_read_HF(uart, length, data);
+    if (!success)
+    {
+        success = rfid_7941w_read_LF(uart, length, data);
+    }
+    return success;
 }

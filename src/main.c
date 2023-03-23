@@ -4,23 +4,47 @@
 
 #include "lib/7941w.h"
 
+//extracting last 4 bytes
+uint32_t extract_uint32(uint8_t len, uint8_t* data)
+{
+    uint8_t* tail = (data+len-1);
+    uint32_t ret = 0;
+    int i = 0;
+    while (i<4 && data<=tail)
+    {
+        ret = ret + ( ((uint32_t)(*tail)) << (i*8) );
+        i++;
+        tail--;
+    }
+    return ret;
+}
+
 int main() {
     stdio_init_all();
 
     rfid_7941w_init(uart1);
 
+    uint8_t len;
+    uint8_t buff[255];
+
     int counter = 0;
     while (true) {
         printf("Loop %d\n", counter++);
         
-        rfid_7941w_send(uart1, 0x0, 0x10, 0, NULL);
-        printf("  Data sent\n");
-        sleep_ms(10);
-        uint8_t command = 0;
-        rfid_7941w_recv(uart1, NULL, &command, NULL, NULL);
-        printf("  Received status %02hhX\n", command);
 
-        sleep_ms(990);
+        if (rfid_7941w_read(uart1, &len, buff))
+        {
+            printf("  Received id: 0x");
+            int i = 0;
+            for (i=0;i<len;i++) 
+            {
+                printf("%02hhX", buff[i]);
+            }
+            printf(" (%010u)", extract_uint32(len, buff));
+            printf("\n");
+        }
+
+        sleep_ms(950);
     }
     return 0;
 }

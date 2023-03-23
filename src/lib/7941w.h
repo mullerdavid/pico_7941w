@@ -11,11 +11,17 @@ void rfid_7941w_send(uart_inst_t *uart, uint8_t address, uint8_t command, uint8_
 // data must have enough space for 255 bytes, returns true on success
 bool rfid_7941w_recv(uart_inst_t *uart, uint8_t *address, uint8_t *command, uint8_t *length, uint8_t *data);
 
-//125 kHz, eg T5577
+// 125 kHz, eg T5577
 bool rfid_7941w_read_LF(uart_inst_t *uart, uint8_t *length, uint8_t *data);
 
-//13.56 MHz, eg RFID
+// 13.56 MHz, eg RFID
 bool rfid_7941w_read_HF(uart_inst_t *uart, uint8_t *length, uint8_t *data);
 
-//Try to read HF first then LF
+// try to read HF first then LF
 bool rfid_7941w_read(uart_inst_t *uart, uint8_t *length, uint8_t *data);
+
+// 125 kHz, eg T5577
+bool rfid_7941w_write_LF(uart_inst_t *uart, uint8_t length, uint8_t *data);
+
+// 13.56 MHz, eg RFID
+bool rfid_7941w_write_HF(uart_inst_t *uart, uint8_t length, uint8_t *data);

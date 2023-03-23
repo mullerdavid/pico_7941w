@@ -167,3 +167,30 @@ bool rfid_7941w_read(uart_inst_t *uart, uint8_t *length, uint8_t *data)
     }
     return success;
 }
+
+bool rfid_7941w_write_LF(uart_inst_t *uart, uint8_t length, uint8_t *data)
+{
+    if (length!=5) return false;
+    rfid_7941w_send(uart, 0x0, 0x16, length, data);
+    sleep_ms(rfid_7941W_RESPONSE_TIME_MS);
+    uint8_t status = 0;
+    bool success;
+    uint8_t b[255];
+    uint8_t l = 0;
+    success = rfid_7941w_recv(uart, NULL, &status, &l, b);
+    return success && status == 0x81;
+}
+
+
+bool rfid_7941w_write_HF(uart_inst_t *uart, uint8_t length, uint8_t *data)
+{
+    if (length!=4) return false;
+    rfid_7941w_send(uart, 0x0, 0x11, length, data);
+    sleep_ms(rfid_7941W_RESPONSE_TIME_MS);
+    uint8_t status = 0;
+    bool success;
+    uint8_t b[255];
+    uint8_t l = 0;
+    success = rfid_7941w_recv(uart, NULL, &status, &l, b);
+    return success && status == 0x81;
+}

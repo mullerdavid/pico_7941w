@@ -26,6 +26,14 @@ int main() {
 
     uint8_t len;
     uint8_t buff[255];
+    
+    //uint8_t w[] = {0x11, 0x22, 0x33, 0x44, 0x55};
+    //rfid_7941w_write_LF(uart1, sizeof(w), w);
+
+    //uint8_t w[] = {0x11, 0x22, 0x33, 0x44};
+    //rfid_7941w_write_HF(uart1, sizeof(w), w);
+
+    //sleep_ms(3000);
 
     int counter = 0;
     while (true) {

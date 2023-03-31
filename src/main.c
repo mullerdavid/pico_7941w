@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include "pico/stdlib.h"
 #include "hardware/uart.h"
 
@@ -24,8 +26,8 @@ int main() {
 
     rfid_7941w_init(uart1);
 
-    uint8_t len;
-    uint8_t buff[255];
+    //uint8_t len;
+    //uint8_t buff[255];
     
     //uint8_t w[] = {0x11, 0x22, 0x33, 0x44, 0x55};
     //rfid_7941w_write_LF(uart1, sizeof(w), w);
@@ -39,17 +41,11 @@ int main() {
     while (true) {
         printf("Loop %d\n", counter++);
         
+        uint64_t id = rfid_7941w_alt_read(uart1);
 
-        if (rfid_7941w_read(uart1, &len, buff))
+        if (id != 0)
         {
-            printf("  Received id: 0x");
-            int i = 0;
-            for (i=0;i<len;i++) 
-            {
-                printf("%02hhX", buff[i]);
-            }
-            printf(" (%010u)", extract_uint32(len, buff));
-            printf("\n");
+            printf("  Received id: 0x%010" PRIx64 " (%010" PRIu32 ")\n", id, (uint32_t)id);
         }
 
         sleep_ms(950);

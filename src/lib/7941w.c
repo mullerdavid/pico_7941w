@@ -194,3 +194,55 @@ bool rfid_7941w_write_HF(uart_inst_t *uart, uint8_t length, uint8_t *data)
     success = rfid_7941w_recv(uart, NULL, &status, &l, b);
     return success && status == 0x81;
 }
+
+uint64_t rfid_7941w_alt_read(uart_inst_t *uart)
+{
+    return rfid_7941w_alt_read_with_info(uart, NULL);
+}
+
+uint64_t rfid_7941w_alt_read_with_info(uart_inst_t *uart, rfid_7941w_type_t *info)
+{
+    uint8_t len;
+    uint8_t buff[255];
+    uint64_t ret = 0;
+    rfid_7941w_type_t type = ERROR;
+
+    if (rfid_7941w_read_LF(uart, &len, buff))
+    {
+        type = LF;
+    }
+    else if (rfid_7941w_read_HF(uart, &len, buff))
+    {
+        type = HF;
+    }
+
+    if (type != ERROR)
+    {
+        const size_t size = sizeof(ret);
+        uint8_t *ret_array = (uint8_t *)&ret;
+        size_t i;
+        for ( i=0; i<size && i<len; i++ )
+        {
+            ret_array[i] = buff[len-1-i];
+        }
+    }
+
+    if (info)
+    {
+        *info = type;
+    }
+
+    return ret;
+}
+
+bool rfid_7941w_alt_write_LF(uart_inst_t *uart, uint8_t vendor, uint32_t id)
+{
+    //TODO: implement
+    return true;
+}
+
+bool rfid_7941w_alt_write_HF(uart_inst_t *uart, uint32_t id)
+{
+    //TODO: implement
+    return true;
+}

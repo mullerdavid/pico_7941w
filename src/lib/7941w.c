@@ -1,7 +1,6 @@
 #include "7941w.h"
 
 #include <string.h>
-#include <endian.h>
 #include "pico/time.h"
 #include "hardware/gpio.h"
 #include "hardware/uart.h"

@@ -12,13 +12,13 @@ int main() {
 
     rfid_7941w_init(uart1);
 
+    #if 0
     //rfid_7941w_alt_write_id_EM4305(uart1, 0x68, 5275669);
-    //rfid_7941w_alt_write_id_EM4305(uart1, 0xff, 0x11223344);
-
-    //uint8_t w[] = {0x11, 0x22, 0x33, 0x44};
-    //rfid_7941w_write_HF(uart1, sizeof(w), w);
-
+    rfid_7941w_alt_write_id_EM4305(uart1, 0xff, 0x11223344);
+    //rfid_7941w_alt_write_id_S50(uart1, 2207165843);
+    //rfid_7941w_alt_write_id_S50(uart1, 0xaabbccdd);
     sleep_ms(3000);
+    #endif
 
     int counter = 0;
     while (true) {

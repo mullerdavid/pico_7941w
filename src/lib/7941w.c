@@ -1,6 +1,7 @@
 #include "7941w.h"
 
 #include <string.h>
+#include <endian.h>
 #include "pico/time.h"
 #include "hardware/gpio.h"
 #include "hardware/uart.h"
@@ -244,7 +245,11 @@ uint64_t rfid_7941w_alt_read_id_with_info(uart_inst_t *uart, rfid_7941w_type_t *
         size_t i;
         for ( i=0; i<size && i<len; i++ )
         {
+            #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
             ret_array[i] = buff[len-1-i];
+            #else
+            ret_array[size-i] = buff[len-1-i];
+            #endif
         }
     }
 
@@ -263,10 +268,17 @@ bool rfid_7941w_alt_write_id_EM4305(uart_inst_t *uart, uint8_t vendor, uint32_t 
     uint8_t buff[len];
     uint8_t *convert = (uint8_t *)&id;
     buff[i++] = vendor;
+    #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     buff[i++] = convert[3];
     buff[i++] = convert[2];
     buff[i++] = convert[1];
     buff[i++] = convert[0];
+    #else
+    buff[i++] = convert[0];
+    buff[i++] = convert[1];
+    buff[i++] = convert[2];
+    buff[i++] = convert[3];
+    #endif
     return rfid_7941w_write_id_LF(uart, len, buff);
 }
 
@@ -276,9 +288,16 @@ bool rfid_7941w_alt_write_id_S50(uart_inst_t *uart, uint32_t id)
     uint8_t buff[len];
     uint8_t *convert = (uint8_t *)&id;
     size_t i = 0;
+    #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     buff[i++] = convert[3];
     buff[i++] = convert[2];
     buff[i++] = convert[1];
     buff[i++] = convert[0];
+    #else
+    buff[i++] = convert[0];
+    buff[i++] = convert[1];
+    buff[i++] = convert[2];
+    buff[i++] = convert[3];
+    #endif
     return rfid_7941w_write_id_HF(uart, len, buff);
 }

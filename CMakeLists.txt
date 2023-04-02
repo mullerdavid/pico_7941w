@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 
 # Pull in PICO SDK (must be before project)
-include(pico_sdk_import.cmake)
+include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
-project(rfid_rw_7941w C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
@@ -21,10 +20,12 @@ add_compile_options(-Wall
         )
 
 # Project files
+project(rfid_rw_7941w C CXX ASM)
+
+add_subdirectory(./lib/7941w)
 
 add_executable(main
-src/main.c
-src/lib/7941w.c
+example/main.c
 )
 
 pico_enable_stdio_usb(main 1)
@@ -32,4 +33,4 @@ pico_enable_stdio_uart(main 1)
 
 pico_add_extra_outputs(main)
 
-target_link_libraries(main pico_stdlib)
+target_link_libraries(main pico_stdlib 7941w)

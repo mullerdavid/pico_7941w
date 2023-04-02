@@ -30,6 +30,16 @@ void rfid_7941w_init(uart_inst_t *uart)
     }
 }
 
+void rfid_7941w_reset(uart_inst_t *uart)
+{
+    rfid_7941w_init(uart);
+    uint8_t dummy[1];
+    while (uart_is_readable(uart))
+    {
+        uart_read_blocking(uart, dummy, 1);
+    }
+}
+
 void rfid_7941w_init_generic(uart_inst_t *uart, uint tx_pin, uint rx_pin)
 {
     uart_init(uart, 2400);
@@ -56,12 +66,19 @@ bool uart_read_blocking_timout(uart_inst_t *uart, uint8_t *dst, size_t len)
 {
     const uint32_t bytes_per_sec = rfid_7941W_UART_BAUD / (rfid_7941W_UART_DATA_BITS + rfid_7941W_UART_STOP_BITS + 1);
     const uint32_t wait_per_byte_us = ( 1000000 + bytes_per_sec ) / bytes_per_sec + 10; // ceiling + little extra
-    bool readable = uart_is_readable_within_us(uart, len*wait_per_byte_us);
-    if (readable)
+
+    size_t read = 0;
+    do
     {
-        uart_read_blocking(uart, dst, len);
-    }
-    return readable;
+        if (! uart_is_readable_within_us(uart, wait_per_byte_us))
+        {
+            break;
+        }
+        uart_read_blocking(uart, (dst+read), 1);
+        read++;
+    } while (read < len);
+
+    return read == len;
 }
 
 void rfid_7941w_send(uart_inst_t *uart, uint8_t address, uint8_t command, uint8_t length, uint8_t *data)
@@ -84,7 +101,11 @@ void rfid_7941w_send(uart_inst_t *uart, uint8_t address, uint8_t command, uint8_
     }
     buffer[5+length] = calc_xor(length+3, (buffer+2) );
 
-    uart_write_blocking(uart, buffer, (6+length));
+    if (uart_is_writable(uart))
+    {
+        uart_write_blocking(uart, buffer, (6+length));
+    }
+    
 }
 
 bool rfid_7941w_recv(uart_inst_t *uart, uint8_t *address, uint8_t *command, uint8_t *length, uint8_t *data)
@@ -137,7 +158,7 @@ bool rfid_7941w_recv(uart_inst_t *uart, uint8_t *address, uint8_t *command, uint
     return false;
 }
 
-bool rfid_7941w_read_LF(uart_inst_t *uart, uint8_t *length, uint8_t *data)
+bool rfid_7941w_read_id_LF(uart_inst_t *uart, uint8_t *length, uint8_t *data)
 {
     rfid_7941w_send(uart, 0x0, 0x15, 0, NULL);
     sleep_ms(rfid_7941W_RESPONSE_TIME_MS);
@@ -147,7 +168,7 @@ bool rfid_7941w_read_LF(uart_inst_t *uart, uint8_t *length, uint8_t *data)
     return success && status == 0x81;
 }
 
-bool rfid_7941w_read_HF(uart_inst_t *uart, uint8_t *length, uint8_t *data)
+bool rfid_7941w_read_id_HF(uart_inst_t *uart, uint8_t *length, uint8_t *data)
 {
     rfid_7941w_send(uart, 0x0, 0x10, 0, NULL);
     sleep_ms(rfid_7941W_RESPONSE_TIME_MS);
@@ -157,20 +178,20 @@ bool rfid_7941w_read_HF(uart_inst_t *uart, uint8_t *length, uint8_t *data)
     return success && status == 0x81;
 }
 
-bool rfid_7941w_read(uart_inst_t *uart, uint8_t *length, uint8_t *data)
+bool rfid_7941w_read_id(uart_inst_t *uart, uint8_t *length, uint8_t *data)
 {
     bool success;
-    success = rfid_7941w_read_HF(uart, length, data);
+    success = rfid_7941w_read_id_HF(uart, length, data);
     if (!success)
     {
-        success = rfid_7941w_read_LF(uart, length, data);
+        success = rfid_7941w_read_id_LF(uart, length, data);
     }
     return success;
 }
 
-bool rfid_7941w_write_LF(uart_inst_t *uart, uint8_t length, uint8_t *data)
+bool rfid_7941w_write_id_LF(uart_inst_t *uart, uint8_t length, uint8_t *data)
 {
-    if (length!=5) return false;
+    //if (length!=5) return false;
     rfid_7941w_send(uart, 0x0, 0x16, length, data);
     sleep_ms(rfid_7941W_RESPONSE_TIME_MS);
     uint8_t status = 0;
@@ -182,9 +203,9 @@ bool rfid_7941w_write_LF(uart_inst_t *uart, uint8_t length, uint8_t *data)
 }
 
 
-bool rfid_7941w_write_HF(uart_inst_t *uart, uint8_t length, uint8_t *data)
+bool rfid_7941w_write_id_HF(uart_inst_t *uart, uint8_t length, uint8_t *data)
 {
-    if (length!=4) return false;
+    //if (length!=4) return false;
     rfid_7941w_send(uart, 0x0, 0x11, length, data);
     sleep_ms(rfid_7941W_RESPONSE_TIME_MS);
     uint8_t status = 0;
@@ -195,23 +216,23 @@ bool rfid_7941w_write_HF(uart_inst_t *uart, uint8_t length, uint8_t *data)
     return success && status == 0x81;
 }
 
-uint64_t rfid_7941w_alt_read(uart_inst_t *uart)
+uint64_t rfid_7941w_alt_read_id(uart_inst_t *uart)
 {
-    return rfid_7941w_alt_read_with_info(uart, NULL);
+    return rfid_7941w_alt_read_id_with_info(uart, NULL);
 }
 
-uint64_t rfid_7941w_alt_read_with_info(uart_inst_t *uart, rfid_7941w_type_t *info)
+uint64_t rfid_7941w_alt_read_id_with_info(uart_inst_t *uart, rfid_7941w_type_t *info)
 {
     uint8_t len;
     uint8_t buff[255];
     uint64_t ret = 0;
     rfid_7941w_type_t type = ERROR;
 
-    if (rfid_7941w_read_LF(uart, &len, buff))
+    if (rfid_7941w_read_id_LF(uart, &len, buff))
     {
         type = LF;
     }
-    else if (rfid_7941w_read_HF(uart, &len, buff))
+    else if (rfid_7941w_read_id_HF(uart, &len, buff))
     {
         type = HF;
     }
@@ -235,14 +256,29 @@ uint64_t rfid_7941w_alt_read_with_info(uart_inst_t *uart, rfid_7941w_type_t *inf
     return ret;
 }
 
-bool rfid_7941w_alt_write_LF(uart_inst_t *uart, uint8_t vendor, uint32_t id)
+bool rfid_7941w_alt_write_id_EM4305(uart_inst_t *uart, uint8_t vendor, uint32_t id)
 {
-    //TODO: implement
-    return true;
+    size_t i = 0;
+    uint8_t len = 5;
+    uint8_t buff[len];
+    uint8_t *convert = (uint8_t *)&id;
+    buff[i++] = vendor;
+    buff[i++] = convert[3];
+    buff[i++] = convert[2];
+    buff[i++] = convert[1];
+    buff[i++] = convert[0];
+    return rfid_7941w_write_id_LF(uart, len, buff);
 }
 
-bool rfid_7941w_alt_write_HF(uart_inst_t *uart, uint32_t id)
+bool rfid_7941w_alt_write_id_S50(uart_inst_t *uart, uint32_t id)
 {
-    //TODO: implement
-    return true;
+    uint8_t len = 4;
+    uint8_t buff[len];
+    uint8_t *convert = (uint8_t *)&id;
+    size_t i = 0;
+    buff[i++] = convert[3];
+    buff[i++] = convert[2];
+    buff[i++] = convert[1];
+    buff[i++] = convert[0];
+    return rfid_7941w_write_id_HF(uart, len, buff);
 }

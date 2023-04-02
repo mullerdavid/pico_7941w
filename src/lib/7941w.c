@@ -248,7 +248,7 @@ uint64_t rfid_7941w_alt_read_id_with_info(uart_inst_t *uart, rfid_7941w_type_t *
             #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
             ret_array[i] = buff[len-1-i];
             #else
-            ret_array[size-i] = buff[len-1-i];
+            ret_array[size-1-i] = buff[len-1-i];
             #endif
         }
     }

@@ -10,5 +10,3 @@ Connect the following
  - Level shifter LV1 (BSCL) / Pico GP4 (Uart1 TX)
  - Level shifter LV2 (BSDA) / Pico GP5 (Uart1 RX)
  
-
-https://github.com/RfidResearchGroup/proxmark3/blob/master/doc/T5577_Guide.md
